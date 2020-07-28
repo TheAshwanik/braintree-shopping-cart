@@ -1,0 +1,44 @@
+<h1>{{title}}</h1>
+<form action="/process" method="POST">  
+{{# if products }}
+    <div class="cart page">
+        <ul class="list-group">
+            {{# each products }}
+            <li class="list-group-item clearfix">
+                <div class="col-xs-5">
+                    <strong>{{ this.item.title }}</strong><br/>
+                    <em>{{{this.item.description}}}</em>
+                </div>
+                <div class="col-xs-2 text-right">
+                    <span class="badge">{{ this.quantity }}</span>
+                </div>
+                <div class="col-xs-3 text-right">
+                    {{ this.price }} GBP
+                </div>
+                <div class="col-xs-2 text-right">
+                    <a href="/remove/{{this.item.id}}" class="btn btn-default"></i> Remove</a>
+                </div>
+            </li>
+            {{/each}}
+        </ul>
+    </div>
+
+    <div class="text-right">
+        <strong>Total: {{ totalPrice }} GBP</strong>
+        <input type="hidden" name="amount" id="amount" value={{ totalPrice }}>
+    </div>
+    <hr>
+    <div>
+    <div class="text-right" style="display:inline-block;  margin-right:10px; float: right">
+        <button id="submit-button" type="submit" class="btn btn-success" formaction="/paybyvault">Pay with Valuted Payment Now</button>
+     </div>
+
+    </div>
+{{ else }}
+    Your shopping cart is empty.
+{{/if}}
+</form>
+
+<script src="https://js.braintreegateway.com/js/braintree-2.32.1.min.js"></script>
+<script type="text/javascript"  src="/javascripts/cart.js"></script>
+
