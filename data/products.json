@@ -3,24 +3,24 @@
     "id": 1,
     "title": "Apple iPhone 11 Pro",
     "description": "Apples iPhone are <span class=\"label label-info\">100 GBP each</span>",
-    "price": 100
+    "price": 500
   },
   {
     "id": 2,
     "title": "Samsung Note 10",
     "description": "Samsung Note 10 + Free Wireless charger <span class=\"label label-info\">200 GBP each</span>",
-    "price": 200
+    "price": 600
   },
   {
     "id": 3,
     "title": "Google Pixel 3",
     "description": "Google Pixel with pixel buds are <span class=\"label label-info\">125 GBP each</span>",
-    "price": 15
+    "price": 365
   },
   {
     "id": 4,
     "title": "Nokia 3310 - New",
-    "description": "Nokia 3310 - New <span class=\"label label-info\"200 GBP each</span>, but are <span class=\"label label-warning\">available on discount/span>",
+    "description": "Nokia 3310 - New <span class=\"label label-info\"200 GBP each</span>, but are <span class=\"label label-warning\"> available on discount/span>",
     "price": 110
   }
 ]
