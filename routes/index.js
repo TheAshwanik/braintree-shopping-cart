@@ -29,36 +29,8 @@ var products = JSON.parse(fs.readFileSync('./data/products.json', 'utf8'));
 
 router.get('/', function (req, res, next) {
   console.log("Starting");
-  //console.log(req.session);
-  var productId = products && products[0].id;
-  var custid = null;
-  var mycustomer = {
-      firstName: "Jen",
-      lastName: "Smith",
-      company: "Braintree",
-      email: "jen@example.com",
-      phone: "312.555.1234",
-      fax: "614.555.5678",
-      website: "www.example.com",
-      id:req.sessionID
-  } 
-  //console.log(mycustomer);
-  gateway.customer.find(mycustomer.id, function(err, foundcustomer){
-    if (typeof foundcustomer == 'undefined'){
-       gateway.customer.create(mycustomer, function (err, result) {
-          console.log(result.success);
-          console.log(result.customer.id);
-          mycustomer = result.customer;
-          req.session.mycustomer = result.customer;
-        });
-    }else{
-        mycustomer = foundcustomer;
-        console.log(mycustomer.id);
-        req.session.mycustomer = foundcustomer;
-    }
-   });
-  //console.log(req.session);
-  res.render('index',{title: 'My Retail Shop', products: products, mycustomerid: mycustomer.id });
+  
+  res.render('index',{title: 'My Retail Shop', products: products, mycustomerid: req.session.mycustomerid });
 });
 
 router.get("/client_token", function (req, res) {
@@ -69,20 +41,15 @@ router.get("/client_token", function (req, res) {
 
 router.post('/add/:id', function(req, res, next) {
   //console.log("adding product");
-
   var productId = req.params.id;
   var cart = new Cart(req.session.cart ? req.session.cart : {});
   var product = products.filter(function(item) {
     return item.id == productId;
   });
-  
   //console.log(req.params);
   //console.log(req.query);
-
   //console.log(req.session);
   //console.log("----------"+ req.body.mycustomerid);
-
-
   cart.add(product[0], productId);
   req.session.mycustomerid = req.body.mycustomerid;
   req.session.cart = cart;
@@ -92,28 +59,52 @@ router.post('/add/:id', function(req, res, next) {
 
 router.post('/cart', function(req, res, next) {
   console.log("Inside Cart now");
+  console.log(req.session);
+  var productId = products && products[0].id;
+  var custid = null;
   if (!req.session.cart) {
     return res.render('cart', {
       products: null
     });
   }
-  
-  //console.log("params--->"+ req.params);
-  //console.log("Query---->"+req.query);
-  //console.log("Body---->"+req.body.mycustomer.id);
-  //console.log(req.session.mycustomerid);
-  
   var cart = new Cart(req.session.cart);
-  
-  gateway.customer.find(req.session.mycustomerid, function(err, customer) {
-    //console.log(customer);
-    if (typeof customer.paymentMethods[0] == 'undefined'){
-       res.render('cart', { title: 'My Web Shop',products: cart.getItems(),totalPrice: cart.totalPrice,cust: customer });
-    }else{
-       res.render('tokencart', { title: 'My Web Shop',products: cart.getItems(),totalPrice: cart.totalPrice, cust: customer });
+   
+  var mycustomer = null;
+  var dummycustomer = {
+      firstName: "Jen",
+      lastName: "Smith",
+      company: "Braintree",
+      email: "jen@example.com",
+      phone: "312.555.1234",
+      fax: "614.555.5678",
+      website: "www.example.com",
+      id:req.sessionID
+  }
+  console.log(dummycustomer);
+  gateway.customer.find(dummycustomer.id, function(err, foundcustomer){
+    if (typeof foundcustomer == 'undefined'){//customer not found
+       gateway.customer.create(dummycustomer, function (err, result) {
+          mycustomer = result.customer;
+          console.log("customer not found -- Created customer in Braintree , Customer ID is--------------------------------" + mycustomer.id);
+          console.log(result);
+          if (typeof mycustomer.paymentMethods[0] == 'undefined'){
+             res.render('cart', { title: 'My Web Shop',products: cart.getItems(),totalPrice: cart.totalPrice,cust: mycustomer });
+          }else{
+             res.render('tokencart', { title: 'My Web Shop',products: cart.getItems(),totalPrice: cart.totalPrice, cust: mycustomer });
+          }
+        }); // end of create customer
+    }else{ //customer found
+        mycustomer = foundcustomer;
+        console.log("customer found -- Existing customer in Braintree , Customer ID is--------------------------------" + mycustomer.id);
+        if (typeof mycustomer.paymentMethods[0] == 'undefined'){
+           res.render('cart', { title: 'My Web Shop',products: cart.getItems(),totalPrice: cart.totalPrice,cust: mycustomer });
+        }else{
+           res.render('tokencart', { title: 'My Web Shop',products: cart.getItems(),totalPrice: cart.totalPrice, cust: mycustomer });
+        }
     }
-  });
-
+    console.log(mycustomer);
+   }); // end of find customer
+  
 });
 
 router.get('/remove/:id', function(req, res, next) {
@@ -127,24 +118,24 @@ router.get('/remove/:id', function(req, res, next) {
 
 router.post('/process', function(req, res) {
   console.log("inside process now");
-  //console.log(req.params);
-  //console.log(req.query);
-  //console.log(req.body);
-  //console.log(req.session.mycustomerid);
+  console.log(req.params);
+  console.log(req.query);
+  console.log(req.body);
+  console.log(req.body.mycustomerid);
   
   var nonce = req.body.payment_method_nonce;
   var token = req.body.token;
   
   gateway.paymentMethod.create({
-    customerId: req.session.mycustomerid,
+    customerId: req.body.mycustomerid,
     paymentMethodNonce: nonce
   }, function (err, result) {
     if (result.success) {
-      //console.log("result is -------");
-      //console.log(result); 
+      console.log("result is -------");
+      console.log(result); 
       var token = result.paymentMethod.token;
-      //console.log("token is");
-      //console.log(token);
+      console.log("token is");
+      console.log(token);
 
       gateway.transaction.sale({
             paymentMethodToken: token ,
@@ -168,7 +159,7 @@ router.post('/paybyvault', function(req, res) {
   
   var token ;
 
-  gateway.customer.find(req.session.mycustomerid, function(err, customer) {
+  gateway.customer.find(req.body.mycustomerid, function(err, customer) {
     if (!customer.id){
         console.log("customer not found -- token is--------------------------------" + token);
         
@@ -183,7 +174,7 @@ router.post('/paybyvault', function(req, res) {
         paymentMethodToken: token,
         amount: req.body.amount,
         recurring: false,
-        customerId: req.session.mycustomerid
+        customerId: req.body.mycustomerid
       }, function (err, result) {
         //console.log("Payment Success" + result);
         res.render('success', {result: result});
